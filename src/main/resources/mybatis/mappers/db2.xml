@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="db">
+
+	<!--  INPUT TABLE COULMN LIST FOR INSERT_DATA -->
+	<select id="selectTables" resultType="HashMap">	
+		SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE
+		FROM USER_TAB_COLUMNS
+		WHERE TABLE_NAME LIKE 'DEMO_IN'||'%'
+		AND COLUMN_NAME NOT IN ('A', 'FRST_REG_DT', 'FRST_REG_TM', 'FRST_REG_EMP_NO', 'LAST_PROC_DT', 'LAST_PROC_TM', 'LAST_PROC_EMP_NO')
+		ORDER BY DECODE(TABLE_NAME, 'INSERT_A', 1), TABLE_NAME ASC, COLUMN_ID ASC
+	</select>
+	
+	<!--  INPUT COLUMN LIST FOR VALIDATION -->
+	<select id="selectColumns" resultType="HashMap">
+		SELECT DISTINCT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE
+		FROM USER_TAB_COLUMNS
+		WHERE TABLE_NAME LIKE 'DEMO_IN'||'%'
+		AND COLUMN_NAME NOT IN ('A', 'FRST_REG_DT', 'FRST_REG_TM', 'FRST_REG_EMP_NO', 'LAST_PROC_DT', 'LAST_PROC_TM', 'LAST_PROC_EMP_NO')
+	</select>
+	
+	<!-- OUTPUT TABLE COLUMN LIST -->
+	<select id="selectOutputColumns" resultType="HashMap">
+		SELECT COLUMN_NAME, DATA_TYPE
+		FROM USER_TAB_COLUMNS
+		WHERE TABLE_NAME = 'DEMO_OUT'
+		AND COLUMN_NAME NOT IN ('FRST_REG_DT', 'FRST_REG_TM', 'FRST_REG_EMP_NO', 'LAST_PROC_DT', 'LAST_PROC_TM', 'LAST_PROC_EMP_NO')
+	</select>
+	
+	
+	<!-- raw data : log -->
+	<insert id="insertRSLog" parameterType="HashMap">
+		INSERT INTO DEMO_RS_LOG (RS_LOG_SEQ, RS_LOG_FG, RS_LOG_DTTM, RS_LOG_STR)
+		VALUES(TAS_RS_SEQ.NEXTVAL, #{RS}, TO_CHAR(SYSTIMESTAMP, 'YYYY-MM-DD HH24:MI:SS:FF'), TO_CLOB(#{logSTR}))
+	</insert>
+	
+
+	<!-- 첫번째 인풋 테이블 입력 -->
+	<insert id="insertFirstTable" parameterType="HashMap">
+		<selectKey keyProperty="a" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(A)+1,1)
+			FROM DEMO_IN_A
+			WHERE B = #{b}
+			AND C = #{c}
+			AND D = #{d}
+		</selectKey>
+		INSERT INTO ${tableName}
+		(${columnList}, A, FRST_REG_DT, FRST_REG_TM, FRST_REG_EMP_NO, LAST_PROC_DT, LAST_PROC_TM, LAST_PROC_EMP_NO)
+		VALUES(${valueList}, #{a}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'), TO_CHAR(SYSDATE, 'HH24MISS'), 'SYSTEM', TO_CHAR(SYSDATE, 'YYYY-MM-DD'), TO_CHAR(SYSDATE, 'HH24MISS'), 'SYSTEM')
+	</insert>
+	
+	<!-- 나머지 인풋 테이블 입력 -->
+	<insert id="insertTable" parameterType="HashMap">
+		INSERT INTO ${tableName}
+		(${columnList}, A, FRST_REG_DT, FRST_REG_TM, FRST_REG_EMP_NO, LAST_PROC_DT, LAST_PROC_TM, LAST_PROC_EMP_NO)
+		VALUES(${valueList}, #{a}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'), TO_CHAR(SYSDATE, 'HH24MISS'), 'SYSTEM', TO_CHAR(SYSDATE, 'YYYY-MM-DD'), TO_CHAR(SYSDATE, 'HH24MISS'), 'SYSTEM')
+	</insert>
+	
+	<!-- insert 제외 테이블 입력 -->
+	<insert id="insertOtherTable" parameterType="HashMap">
+		INSERT INTO ${tableName} ${columnList} VALUES ${valueList}
+	</insert>
+	
+
+</mapper>
